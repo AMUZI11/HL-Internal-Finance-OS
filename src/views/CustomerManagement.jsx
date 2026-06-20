@@ -5,6 +5,25 @@ import { api, calculateCascadingDiscount } from '../utils/api';
 import ConfirmModal from '../components/ConfirmModal';
 import { useTutorial, ContextualTooltip } from '../components/TutorialEngine';
 
+const getTerbacaRupiah = (amountStr) => {
+  const num = parseInt(amountStr);
+  if (isNaN(num) || num <= 0) return '';
+  const formatted = new Intl.NumberFormat('id-ID', { 
+    style: 'currency', 
+    currency: 'IDR', 
+    minimumFractionDigits: 0 
+  }).format(num);
+  
+  if (num >= 1000000) {
+    const juta = num / 1000000;
+    return `Terbaca: ${formatted} (${juta % 1 === 0 ? juta : juta.toFixed(2)} Juta)`;
+  } else if (num >= 1000) {
+    const ribu = num / 1000;
+    return `Terbaca: ${formatted} (${ribu % 1 === 0 ? ribu : ribu.toFixed(1)} Ribu)`;
+  }
+  return `Terbaca: ${formatted}`;
+};
+
 export default function CustomerManagement({ setView, setSelectedCustomerId }) {
   const { registerTrigger } = useTutorial();
   const [customers, setCustomers] = useState([]);
@@ -363,6 +382,11 @@ export default function CustomerManagement({ setView, setSelectedCustomerId }) {
                   placeholder="Contoh: 10000000"
                   className="w-full h-12 bg-gray-50 border-2 border-gray-200 rounded-xl px-4 text-sm focus:border-navy-bright focus:bg-white outline-none transition-all"
                 />
+                {parseInt(bonusThreshold) > 0 && (
+                  <p className="text-[11px] font-extrabold text-[#C97B1A] mt-1.5 animate-slide-in">
+                    {getTerbacaRupiah(bonusThreshold)}
+                  </p>
+                )}
               </div>
 
               {/* Dynamic Cascading Discounts for each loaded category */}
