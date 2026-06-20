@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { KeyRound, ShieldAlert, CheckCircle2, AlertTriangle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { KeyRound, ShieldAlert, CheckCircle2, AlertTriangle, Eye, EyeOff, Loader2, User } from 'lucide-react';
 import { api } from '../utils/api';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -17,6 +17,12 @@ export default function Settings() {
   const [pwdError, setPwdError] = useState("");
   const [pwdSuccess, setPwdSuccess] = useState("");
   const [pwdLoading, setPwdLoading] = useState(false);
+
+  // Username Form States
+  const [newUsername, setNewUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameSuccess, setUsernameSuccess] = useState("");
+  const [usernameLoading, setUsernameLoading] = useState(false);
 
   // System Reset States
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
@@ -54,6 +60,44 @@ export default function Settings() {
       setPwdError(err.message || "Gagal mengubah kata sandi.");
     } finally {
       setPwdLoading(false);
+    }
+  };
+
+  const handleUsernameSubmit = async (e) => {
+    e.preventDefault();
+    setUsernameError("");
+    setUsernameSuccess("");
+
+    if (!newUsername) {
+      setUsernameError("Kolom username baru wajib diisi.");
+      return;
+    }
+
+    if (newUsername.length < 3) {
+      setUsernameError("Username baru minimal 3 karakter.");
+      return;
+    }
+
+    if (newUsername.length > 50) {
+      setUsernameError("Username baru maksimal 50 karakter.");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
+      setUsernameError("Username hanya boleh berisi huruf, angka, dan underscore.");
+      return;
+    }
+
+    setUsernameLoading(true);
+    try {
+      await api.changeUsername(newUsername);
+      setUsernameSuccess("Username berhasil diubah.");
+      setNewUsername("");
+      window.dispatchEvent(new Event('hl-username-changed'));
+    } catch (err) {
+      setUsernameError(err.message || "Gagal mengubah username.");
+    } finally {
+      setUsernameLoading(false);
     }
   };
 
@@ -197,7 +241,64 @@ export default function Settings() {
           </form>
         </div>
 
-        {/* Section 2: Reset Data Card */}
+        {/* Section 2: Ubah Username Card */}
+        <div className="bg-[#FAF7F0] border-4 border-[#E8DCC8] rounded-3xl p-6 md:p-8 max-w-xl shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-[#3D1A0F] text-white border border-[#4E271B] rounded-xl flex items-center justify-center">
+              <User size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-extrabold text-[#3D1A0F] font-heading">Ubah Username Akun</h2>
+              <p className="text-xs text-[#6B4F3A] font-semibold">Gunakan formulir di bawah ini untuk mengubah nama pengguna (username) Anda.</p>
+            </div>
+          </div>
+
+          {usernameError && (
+            <div className="bg-rose-50 border border-rose-100 text-rose-800 p-4 rounded-xl text-xs font-bold flex items-start gap-2 mb-4 animate-shake">
+              <ShieldAlert className="flex-shrink-0" size={16} />
+              <span>{usernameError}</span>
+            </div>
+          )}
+
+          {usernameSuccess && (
+            <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 p-4 rounded-xl text-xs font-bold flex items-start gap-2 mb-4">
+              <CheckCircle2 className="flex-shrink-0" size={16} />
+              <span>{usernameSuccess}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleUsernameSubmit} className="space-y-4">
+            {/* Input: New Username */}
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-[#6B4F3A] uppercase tracking-wider">Username Baru</label>
+              <input 
+                type="text" 
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder="Masukkan username baru"
+                className="w-full h-12 bg-white border border-[#E8DCC8] rounded-xl px-4 text-sm focus:border-[#C97B1A] outline-none transition-all font-semibold text-[#1C1009]"
+                required
+              />
+            </div>
+
+            {/* Submit button */}
+            <button 
+              type="submit"
+              disabled={usernameLoading}
+              className="w-full bg-[#C97B1A] hover:bg-[#A85F10] disabled:bg-gray-300 text-white font-extrabold h-12 rounded-xl text-sm shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {usernameLoading ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} /> Menyimpan...
+                </>
+              ) : (
+                "Simpan Username Baru"
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Section 3: Reset Data Card */}
         <div className="bg-rose-50/50 border-4 border-rose-100 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2 text-rose-700">

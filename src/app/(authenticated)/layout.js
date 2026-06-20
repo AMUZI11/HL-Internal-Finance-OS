@@ -40,8 +40,15 @@ export default function AuthenticatedLayout({ children }) {
     const handleOpenWizard = () => {
       setIsWizardOpen(true);
     };
+    const handleUsernameChange = () => {
+      setSession(api.getCurrentSession());
+    };
     window.addEventListener('open-setup-wizard', handleOpenWizard);
-    return () => window.removeEventListener('open-setup-wizard', handleOpenWizard);
+    window.addEventListener('hl-username-changed', handleUsernameChange);
+    return () => {
+      window.removeEventListener('open-setup-wizard', handleOpenWizard);
+      window.removeEventListener('hl-username-changed', handleUsernameChange);
+    };
   }, []);
 
   const handleFinishWizard = () => {

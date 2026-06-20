@@ -456,6 +456,25 @@ export const api = {
     if (res?.ok) return { success: true };
     throw new Error(res?.data?.message || 'Gagal mengubah kata sandi');
   },
+
+  changeUsername: async (newUsername) => {
+    const res = await fetchAPI('/auth/change-username', {
+      method: 'POST',
+      body: JSON.stringify({ newUsername }),
+    });
+    if (res?.ok) {
+      if (typeof window !== 'undefined') {
+        const userJson = sessionStorage.getItem('hl_current_user');
+        if (userJson) {
+          const userObj = JSON.parse(userJson);
+          userObj.username = newUsername;
+          sessionStorage.setItem('hl_current_user', JSON.stringify(userObj));
+        }
+      }
+      return { success: true };
+    }
+    throw new Error(res?.data?.message || 'Gagal mengubah username');
+  },
 };
 
 // Re-export MockDB alias untuk backwards compatibility (migrasi bertahap)
