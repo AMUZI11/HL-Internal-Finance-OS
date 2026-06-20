@@ -186,18 +186,37 @@
 
 /* Printing styling rules */
 @media print {
-  body {
-    background: white !important;
-    color: black !important;
-  }
-  .no-print {
+  aside, header, nav, .no-print {
     display: none !important;
   }
+  
+  body, html, main {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
   .print-only {
     display: block !important;
   }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding: 8px 4px !important;
+    color: black !important;
+  }
+  
   .print-card {
-    border: 1px solid #ccc !important;
+    border: 1px solid #cbd5e1 !important;
     box-shadow: none !important;
     background: none !important;
     page-break-inside: avoid;
@@ -298,4 +317,17 @@
   animation: scale-up-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-
+/* Shimmer Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #FAF7F0 25%, #E8DCC8 50%, #FAF7F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}

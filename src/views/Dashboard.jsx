@@ -1,9 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Users, Package, AlertCircle, ArrowRight, ChevronRight, Gift, TrendingUp, DollarSign } from 'lucide-react';
+import { Plus, Users, Package, AlertCircle, ArrowRight, ChevronRight, Gift, TrendingUp, DollarSign, FileText } from 'lucide-react';
 import { api } from '../utils/api';
 import { useTutorial } from '../components/TutorialEngine';
+import { BentoSkeleton, TableSkeleton } from '../components/SkeletonLoader';
+import EmptyState from '../components/EmptyState';
 
 export default function Dashboard({ setView, setSelectedCustomerId }) {
   const router = useRouter();
@@ -75,11 +77,9 @@ export default function Dashboard({ setView, setSelectedCustomerId }) {
 
   if (loading) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-base font-semibold text-primary/80">Memuat Ringkasan Bisnis...</p>
-        </div>
+      <div className="space-y-6">
+        <BentoSkeleton />
+        <TableSkeleton rows={3} />
       </div>
     );
   }
@@ -192,7 +192,13 @@ export default function Dashboard({ setView, setSelectedCustomerId }) {
 
           <div className="overflow-x-auto">
             {recentTx.length === 0 ? (
-              <div className="text-center py-12 text-gray-400 text-sm">Belum ada transaksi tercatat.</div>
+              <EmptyState 
+                icon={FileText}
+                title="Belum Ada Bon Penjualan"
+                message="Bapak/Ibu belum mencatat bon penjualan apa pun untuk saat ini."
+                actionLabel="Buat Bon Baru"
+                onAction={handleCreateBonClick}
+              />
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>

@@ -4,6 +4,8 @@ import { Plus, Edit2, Trash2, X, PlusCircle, MinusCircle, Gift, User, ChevronRig
 import { api, calculateCascadingDiscount } from '../utils/api';
 import ConfirmModal from '../components/ConfirmModal';
 import { useTutorial, ContextualTooltip } from '../components/TutorialEngine';
+import { CardGridSkeleton } from '../components/SkeletonLoader';
+import EmptyState from '../components/EmptyState';
 
 const getTerbacaRupiah = (amountStr) => {
   const num = parseInt(amountStr);
@@ -210,14 +212,7 @@ export default function CustomerManagement({ setView, setSelectedCustomerId }) {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="w-8 h-8 border-4 border-navy-bright border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-charcoal-medium">Memuat Data Pelanggan...</p>
-        </div>
-      </div>
-    );
+    return <CardGridSkeleton count={3} />;
   }
 
   return (
@@ -238,8 +233,17 @@ export default function CustomerManagement({ setView, setSelectedCustomerId }) {
       </div>
 
       {/* Customer List Card Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {customers.map((c) => {
+      {customers.length === 0 ? (
+        <EmptyState 
+          icon={User}
+          title="Belum Ada Pelanggan"
+          message="Bapak/Ibu belum menambahkan pelanggan apa pun ke dalam sistem."
+          actionLabel="Tambah Pelanggan Baru"
+          onAction={openAddModal}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {customers.map((c) => {
           const bStatus = bonusStatuses[c.id] || { bonuses_available: 0 };
           return (
             <div key={c.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between space-y-5 hover:border-navy-ice hover-card-effect">
@@ -325,7 +329,8 @@ export default function CustomerManagement({ setView, setSelectedCustomerId }) {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* Add/Edit Modal overlay */}
       {isModalOpen && (

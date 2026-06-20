@@ -116,7 +116,7 @@ export default function AuthenticatedLayout({ children }) {
   return (
     <div className="min-h-screen bg-background flex flex-col lg:flex-row p-0 lg:p-4 gap-4 pb-28 lg:pb-0">
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden lg:flex flex-col w-[280px] bg-[#3D1A0F] border border-[#4E271B] rounded-3xl p-6 space-y-6 flex-shrink-0 shadow-xl justify-between">
+      <aside className="no-print hidden lg:flex flex-col w-[280px] bg-[#3D1A0F] border border-[#4E271B] rounded-3xl p-6 space-y-6 flex-shrink-0 shadow-xl justify-between">
         <div className="space-y-6">
           <div className="py-4 border-b border-[#4E271B]">
             <h2 className="text-2xl font-extrabold tracking-tight text-white font-heading">HL Manager</h2>
@@ -160,7 +160,7 @@ export default function AuthenticatedLayout({ children }) {
       </aside>
 
       {/* MOBILE HEADER */}
-      <header className="lg:hidden h-16 bg-[#3D1A0F] border-b border-[#4E271B] shadow-sm px-4 flex items-center justify-between z-30 sticky top-0">
+      <header className="no-print lg:hidden h-16 bg-[#3D1A0F] border-b border-[#4E271B] shadow-sm px-4 flex items-center justify-between z-30 sticky top-0">
         <h2 className="text-base font-extrabold text-white font-heading">HL Manager Pro</h2>
         <div className="flex items-center gap-1">
           <Link
@@ -196,7 +196,7 @@ export default function AuthenticatedLayout({ children }) {
       {/* MAIN CONTAINER */}
       <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-y-auto bg-white/50 lg:bg-white border border-transparent lg:border-gray-250/20 rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.01)]">
         {activeTutorial && (
-          <div className="bg-primary text-white px-4 py-3 rounded-2xl shadow-lg flex items-center justify-between mb-6 animate-slide-in sticky top-0 lg:top-4 z-40">
+          <div className="no-print bg-primary text-white px-4 py-3 rounded-2xl shadow-lg flex items-center justify-between mb-6 animate-slide-in sticky top-0 lg:top-4 z-40">
             <div className="flex items-center gap-2">
               <span className="animate-ping w-2.5 h-2.5 bg-cta rounded-full" />
               <p className="text-xs font-bold font-mono">
@@ -216,7 +216,7 @@ export default function AuthenticatedLayout({ children }) {
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="lg:hidden fixed bottom-4 left-4 right-4 h-20 bg-[#3D1A0F]/95 backdrop-blur-md border border-[#4E271B] rounded-3xl shadow-xl flex items-center justify-around px-2 z-[40]">
+      <nav className="no-print lg:hidden fixed bottom-4 left-4 right-4 h-20 bg-[#3D1A0F]/95 backdrop-blur-md border border-[#4E271B] rounded-3xl shadow-xl flex items-center justify-around px-2 z-[40]">
         {navItems.slice(0, 2).map((item) => {
           const Icon = item.icon;
           const isActive = pathname.startsWith(item.href);

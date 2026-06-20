@@ -4,6 +4,8 @@ import { Plus, Edit2, Trash2, X, Search, Package, Tags, ChevronRight } from 'luc
 import { api } from '../utils/api';
 import ConfirmModal from '../components/ConfirmModal';
 import { useTutorial, ContextualTooltip } from '../components/TutorialEngine';
+import { TableSkeleton } from '../components/SkeletonLoader';
+import EmptyState from '../components/EmptyState';
 
 const getTerbacaRupiah = (amountStr) => {
   const num = parseInt(amountStr);
@@ -167,14 +169,7 @@ export default function ProductManagement() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="w-8 h-8 border-4 border-navy-bright border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-charcoal-medium">Memuat Katalog Produk...</p>
-        </div>
-      </div>
-    );
+    return <TableSkeleton rows={5} />;
   }
 
   return (
@@ -335,8 +330,18 @@ export default function ProductManagement() {
       {/* Product List Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">Produk tidak ditemukan. Silakan tambah produk baru.</div>
+          {products.length === 0 ? (
+            <EmptyState 
+              icon={Package}
+              title="Katalog Produk Kosong"
+              message="Bapak/Ibu belum memasukkan produk apa pun ke dalam sistem."
+              actionLabel="Tambah Produk Baru"
+              onAction={openAddModal}
+            />
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-12 text-[#6B4F3A] font-semibold text-sm bg-[#FAF7F0] border border-[#E8DCC8] rounded-3xl p-6">
+              Produk dengan pencarian &quot;{searchQuery}&quot; tidak ditemukan.
+            </div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
