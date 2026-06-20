@@ -65,16 +65,53 @@ export default function Settings() {
     setBackupLoading(true);
     try {
       const data = await api.backupData();
-      
-      // Excel-friendly UTF-8 JSON file download
-      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute('href', jsonString);
       const dateStr = new Date().toISOString().split('T')[0];
-      downloadAnchor.setAttribute('download', `hl_backup_${dateStr}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
+      
+      // 1. Download the structured backup file (.hldata)
+      const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+      const dataAnchor = document.createElement('a');
+      dataAnchor.setAttribute('href', dataStr);
+      dataAnchor.setAttribute('download', `hl_cadangan_${dateStr}.hldata`);
+      document.body.appendChild(dataAnchor);
+      dataAnchor.click();
+      dataAnchor.remove();
+
+      // 2. Download the human-readable summary file (.txt)
+      const categoriesCount = data.data?.categories?.length || 0;
+      const productsCount = data.data?.products?.length || 0;
+      const customersCount = data.data?.customers?.length || 0;
+      const transactionsCount = data.data?.transactions?.length || 0;
+      const logsCount = data.data?.logs?.length || 0;
+
+      const summaryText = `==================================================
+HL MANAGER PRO - RINGKASAN CADANGAN DATA
+==================================================
+Dibuat oleh: Operator (${data.backup_by || 'Sistem'})
+Tanggal: ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+Berkas cadangan data Anda berhasil dibuat. 
+Berikut adalah isi data yang tersimpan di dalam berkas cadangan:
+- Total Kategori Produk: ${categoriesCount} kategori
+- Total Produk Terdaftar: ${productsCount} barang
+- Total Pelanggan: ${customersCount} orang
+- Total Nota Transaksi: ${transactionsCount} nota penjualan
+- Total Catatan Log Audit: ${logsCount} catatan aktivitas
+
+--------------------------------------------------
+PETUNJUK PENTING UNTUK BAPAK/IBU:
+1. Berkas asli untuk pemulihan data bernama: hl_cadangan_${dateStr}.hldata
+2. Mohon JANGAN mengubah nama atau isi berkas .hldata tersebut.
+3. Simpan berkas .hldata di tempat aman (misal: kirim ke WhatsApp sendiri, simpan di flashdisk, atau Google Drive).
+4. Jika ingin mengembalikan data ke aplikasi, pilih berkas .hldata tersebut pada menu "PULIHKAN DATA" di aplikasi.
+==================================================`;
+
+      const txtStr = `data:text/plain;charset=utf-8,${encodeURIComponent(summaryText)}`;
+      const txtAnchor = document.createElement('a');
+      txtAnchor.setAttribute('href', txtStr);
+      txtAnchor.setAttribute('download', `RINGKASAN_CADANGAN_${dateStr}.txt`);
+      document.body.appendChild(txtAnchor);
+      txtAnchor.click();
+      txtAnchor.remove();
       
       // Refresh logs
       setTimeout(() => { loadAuditLogs(); }, 500);
@@ -102,7 +139,7 @@ export default function Settings() {
         setPendingRestorePayload(json);
         setIsRestoreConfirmOpen(true);
       } catch (err) {
-        setRestoreError("Gagal membaca berkas JSON. Pastikan format berkas benar.");
+        setRestoreError("Gagal membaca berkas. Pastikan format berkas benar.");
       }
     };
     reader.readAsText(file);
@@ -405,8 +442,12 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-[#3D1A0F] font-heading">Cadangkan &amp; Pulihkan Data</h2>
-              <p className="text-xs text-[#6B4F3A] font-semibold">Simpan salinan database Anda secara lokal atau pulihkan dari file cadangan JSON.</p>
+              <p className="text-xs text-[#6B4F3A] font-semibold">Simpan salinan database Anda secara aman atau pulihkan dari berkas cadangan.</p>
             </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl text-xs font-semibold leading-relaxed">
+            Penting untuk Bapak/Ibu: Berkas cadangan (.hldata) berisi seluruh data penjualan Anda yang dikemas secara aman. Bapak/Ibu tidak perlu membuka berkas tersebut di HP/Laptop. Simpan saja berkas tersebut di tempat aman untuk cadangan jika komputer bermasalah.
           </div>
 
           {restoreError && (
@@ -431,16 +472,16 @@ export default function Settings() {
               className="bg-[#C97B1A] hover:bg-[#A85F10] disabled:bg-gray-300 text-white font-extrabold p-5 rounded-2xl text-xs shadow-md transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-2 cursor-pointer text-center"
             >
               <Download size={22} />
-              <span>CADANGKAN DATA (Download JSON)</span>
+              <span>SIMPAN CADANGAN AMAN (Unduh Berkas .hldata)</span>
             </button>
 
             {/* Restore File Input */}
             <label className="border-2 border-dashed border-[#E8DCC8] hover:border-[#C97B1A] bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer text-center transition-all hover:bg-[#FAF7F0]/40">
               <Upload size={22} className="text-[#C97B1A]" />
-              <span className="text-xs font-extrabold text-[#3D1A0F]">PULIHKAN DATA (Upload JSON)</span>
+              <span className="text-xs font-extrabold text-[#3D1A0F]">PULIHKAN DATA SISTEM (Unggah Berkas .hldata)</span>
               <input
                 type="file"
-                accept=".json"
+                accept=".hldata"
                 onChange={handleFileChange}
                 className="hidden"
                 disabled={restoreLoading}

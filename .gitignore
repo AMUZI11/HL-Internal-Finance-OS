@@ -42,4 +42,4 @@ next-env.d.ts
 
 # scripts and scratch testing directory
 /scripts/
-
+/testsprite_tests/
