@@ -1,6 +1,7 @@
 // POST /api/v1/admin/reset
 import { prisma } from '@/lib/prisma';
 import { withAuth, errorResponse, successResponse } from '@/lib/auth';
+import { logActivity } from '@/lib/audit';
 
 export const POST = withAuth(async (request, context, user) => {
   try {
@@ -37,6 +38,8 @@ export const POST = withAuth(async (request, context, user) => {
     ], {
       timeout: 20000 // 20 seconds timeout to allow for Supabase network latency
     });
+
+    await logActivity(user.username, 'Reset Data', 'Mereset seluruh data transaksi, pelanggan, barang, dan progress latihan');
 
     return successResponse({ message: 'Semua data berhasil direset dari awal.' });
   } catch (error) {

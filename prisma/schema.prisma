@@ -154,3 +154,13 @@ model BonusGrant {
 
   @@index([customer_id, granted_at])
 }
+
+// ─── AUDIT LOGS ──────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  operator   String   @db.VarChar(50)
+  action     String   @db.VarChar(100)
+  details    String   @db.Text
+  created_at DateTime @default(now())
+}

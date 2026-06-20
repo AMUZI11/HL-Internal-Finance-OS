@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { withAuth, errorResponse, successResponse } from '@/lib/auth';
+import { logActivity } from '@/lib/audit';
 import { z } from 'zod';
 
 const changeUsernameSchema = z.object({
@@ -40,11 +41,12 @@ export const POST = withAuth(async (request, context, user) => {
       return errorResponse('Username sudah digunakan oleh pengguna lain.', 'CONFLICT', 409);
     }
 
-    // Lakukan update username
     await prisma.user.update({
       where: { id: user.id },
       data: { username: newUsername }
     });
+
+    await logActivity(currentUser.username, 'Ubah Username', `Mengubah username dari "${currentUser.username}" menjadi "${newUsername}"`);
 
     return successResponse({
       message: 'Username berhasil diubah.',

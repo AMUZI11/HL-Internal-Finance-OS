@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { withAuth, errorResponse, successResponse } from '@/lib/auth';
 import { formatProduct } from '@/lib/calculations';
 import { productSchema } from '@/lib/validation';
+import { logActivity } from '@/lib/audit';
 
 export const GET = withAuth(async (request) => {
   try {
@@ -25,7 +26,7 @@ export const GET = withAuth(async (request) => {
   }
 });
 
-export const POST = withAuth(async (request) => {
+export const POST = withAuth(async (request, context, user) => {
   try {
     const body = await request.json();
     const parsed = productSchema.safeParse(body);
@@ -42,6 +43,8 @@ export const POST = withAuth(async (request) => {
         tipe,
       },
     });
+
+    await logActivity(user.username, 'Tambah Produk', `Menambahkan produk "${product.nama}" (${tipe}) dengan harga jual dasar Rp${Number(harga_base).toLocaleString('id-ID')}`);
 
     return successResponse(formatProduct(product), 201);
   } catch (error) {

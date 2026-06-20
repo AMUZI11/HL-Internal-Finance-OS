@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { withAuth, errorResponse, successResponse } from '@/lib/auth';
 import { formatCustomer } from '@/lib/calculations';
 import { customerSchema } from '@/lib/validation';
+import { logActivity } from '@/lib/audit';
 
 export const GET = withAuth(async (request) => {
   try {
@@ -19,7 +20,7 @@ export const GET = withAuth(async (request) => {
   }
 });
 
-export const POST = withAuth(async (request) => {
+export const POST = withAuth(async (request, context, user) => {
   try {
     const body = await request.json();
     const parsed = customerSchema.safeParse(body);
@@ -65,6 +66,8 @@ export const POST = withAuth(async (request) => {
       },
       include: { discounts: true },
     });
+
+    await logActivity(user.username, 'Tambah Pelanggan', `Menambahkan pelanggan "${customer.nama}" dengan batas bonus Rp${Number(bonus_threshold).toLocaleString('id-ID')}`);
 
     return successResponse(formatCustomer(customer), 201);
   } catch (error) {

@@ -9,6 +9,7 @@ import {
   getFiveYearsAgoDate,
 } from '@/lib/calculations';
 import { transactionSchema } from '@/lib/validation';
+import { logActivity } from '@/lib/audit';
 
 export const GET = withAuth(async (request) => {
   try {
@@ -50,7 +51,7 @@ export const GET = withAuth(async (request) => {
   }
 });
 
-export const POST = withAuth(async (request) => {
+export const POST = withAuth(async (request, context, user) => {
   try {
     const body = await request.json();
     const parsed = transactionSchema.safeParse(body);
@@ -144,6 +145,8 @@ export const POST = withAuth(async (request) => {
       },
       include: { items: { include: { product: true } }, customer: true },
     });
+
+    await logActivity(user.username, 'Buat Bon', `Membuat bon "${transaction.nomor_bon}" untuk "${customer.nama}" dengan total tagihan Rp${Number(transaction.amount_owed).toLocaleString('id-ID')}`);
 
     return successResponse(formatTransaction(transaction), 201);
   } catch (error) {

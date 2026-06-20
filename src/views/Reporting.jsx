@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
-import { Printer, Gift } from 'lucide-react';
+import { Printer, Gift, Download } from 'lucide-react';
 import { api } from '../utils/api';
 import { useTutorial } from '../components/TutorialEngine';
+import { MonthlyTrendChart, CategoryPieChart } from '../components/AnalyticsCharts';
+import { exportToCSV } from '../utils/export';
 
 export default function Reporting() {
   const { registerTrigger } = useTutorial();
@@ -45,13 +47,42 @@ export default function Reporting() {
     loadInitialData();
   }, []);
 
+  const trendData = useMemo(() => {
+    if (allTransactions.length === 0) return [];
+    const monthlyGroups = {};
+    allTransactions.forEach(t => {
+      const yyyymm = t.tanggal.slice(0, 7);
+      if (!monthlyGroups[yyyymm]) {
+        monthlyGroups[yyyymm] = { omzet: 0, piutang: 0 };
+      }
+      if (t.status === 'Lunas') {
+        monthlyGroups[yyyymm].omzet += Number(t.amount_owed || 0);
+      } else {
+        monthlyGroups[yyyymm].piutang += Number(t.amount_owed || 0);
+      }
+    });
+
+    const sortedMonths = Object.keys(monthlyGroups).sort();
+    return sortedMonths.map(mStr => {
+      const [year, month] = mStr.split("-");
+      const d = new Date(year, month - 1);
+      const label = d.toLocaleString('id-ID', { month: 'short', year: '2-digit' });
+      return {
+        monthLabel: label,
+        omzet: monthlyGroups[mStr].omzet,
+        piutang: monthlyGroups[mStr].piutang
+      };
+    });
+  }, [allTransactions]);
+
   // Compute ledger data on selected month or data changes using useMemo
   const ledgerData = useMemo(() => {
     if (!selectedMonth || allTransactions.length === 0) {
       return {
         totals: { omzet_lm: 0, omzet_br: 0, omzet_total: 0, laba_total: 0, piutang: 0, paid: 0 },
         customerSummaries: [],
-        bonusLogs: []
+        bonusLogs: [],
+        categoryOmzets: {}
       };
     }
 
@@ -65,14 +96,18 @@ export default function Reporting() {
     let piutang = 0;
     let paid = 0;
 
+    const categoryOmzets = {};
     monthlyTx.forEach(t => {
       if (t.status === "Lunas") {
         paid += t.amount_owed;
         
         t.items.forEach(item => {
-          if (item.product_type_snapshot === "LM") {
+          const type = item.product_type_snapshot || 'LM';
+          categoryOmzets[type] = (categoryOmzets[type] || 0) + Number(item.line_omzet || 0);
+
+          if (type === "LM") {
             omzet_lm += item.line_omzet;
-          } else {
+          } else if (type === "BR") {
             omzet_br += item.line_omzet;
           }
           laba_total += item.line_laba;
@@ -131,12 +166,39 @@ export default function Reporting() {
     return {
       totals,
       customerSummaries: summaries,
-      bonusLogs: bonuses
+      bonusLogs: bonuses,
+      categoryOmzets
     };
   }, [selectedMonth, allTransactions, customers]);
 
   const { totals, customerSummaries, bonusLogs } = ledgerData;
 
+
+  const handleExportOverallCSV = () => {
+    const headers = ['Laporan Parameter', 'Nilai Nominal'];
+    const rows = [
+      ['Periode Laporan', selectedMonth],
+      ['Total Omzet Lunas', totals.omzet_total],
+      ['Omzet Kategori LM', totals.omzet_lm],
+      ['Omzet Kategori BR', totals.omzet_br],
+      ['Laba Bersih Lunas', totals.laba_total],
+      ['Outstanding Piutang', totals.piutang],
+      ['Total Setoran Masuk', totals.paid]
+    ];
+    exportToCSV(`Rekap_Bulanan_${selectedMonth}.csv`, headers, rows);
+  };
+
+  const handleExportCustomersCSV = () => {
+    const headers = ['Nama Pelanggan', 'Omzet Lunas (Rp)', 'Laba Lunas (Rp)', 'Outstanding Piutang (Rp)', 'Total Setoran Masuk (Rp)'];
+    const rows = customerSummaries.map(s => [
+      s.nama,
+      s.omzet,
+      s.laba,
+      s.piutang,
+      s.paid
+    ]);
+    exportToCSV(`Breakdown_Pelanggan_${selectedMonth}.csv`, headers, rows);
+  };
 
   const handlePrintOverall = () => {
     const printWindow = window.open("", "_blank");
@@ -331,18 +393,38 @@ export default function Reporting() {
       </div>
 
       {/* Action export card */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center justify-between">
-        <span className="text-xs text-charcoal-medium font-bold">Unduh berkas laporan bulanan:</span>
-        <button 
-          id="report-pdf-btn"
-          onClick={() => {
-            handlePrintOverall();
-            registerTrigger("report-pdf-btn", "click");
-          }}
-          className="flex items-center gap-1.5 px-5 py-2.5 bg-cta hover:bg-cta/90 text-primary text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer font-mono"
-        >
-          <Printer size={16} /> Unduh PDF Rekap Keseluruhan
-        </button>
+      <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <span className="text-xs text-[#6B4F3A] font-bold">Unduh laporan keuangan ({selectedMonth}):</span>
+        <div className="flex flex-wrap gap-2.5">
+          <button 
+            id="report-pdf-btn"
+            onClick={() => {
+              handlePrintOverall();
+              registerTrigger("report-pdf-btn", "click");
+            }}
+            className="flex items-center gap-1.5 px-4 h-11 bg-primary hover:bg-primary/95 text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+          >
+            <Printer size={15} /> Cetak/PDF Rekap
+          </button>
+          <button 
+            onClick={handleExportOverallCSV}
+            className="flex items-center gap-1.5 px-4 h-11 bg-[#C97B1A] hover:bg-[#A85F10] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+          >
+            <Download size={15} /> CSV Rekap Bulanan
+          </button>
+          <button 
+            onClick={handleExportCustomersCSV}
+            className="flex items-center gap-1.5 px-4 h-11 bg-[#FAF7F0] hover:bg-[#E8DCC8] border border-[#E8DCC8] text-[#3D1A0F] text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+          >
+            <Download size={15} /> CSV Breakdown Pelanggan
+          </button>
+        </div>
+      </div>
+
+      {/* Analytics Charts Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <MonthlyTrendChart data={trendData} />
+        <CategoryPieChart data={ledgerData.categoryOmzets} />
       </div>
 
       {/* Main Grid: Breakdown table & Bonus Logs */}

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { withAuth, errorResponse, successResponse } from '@/lib/auth';
 import { formatCustomer } from '@/lib/calculations';
 import { customerSchema } from '@/lib/validation';
+import { logActivity } from '@/lib/audit';
 
 export const GET = withAuth(async (request, { params }) => {
   try {
@@ -21,7 +22,7 @@ export const GET = withAuth(async (request, { params }) => {
   }
 });
 
-export const PUT = withAuth(async (request, { params }) => {
+export const PUT = withAuth(async (request, { params }, user) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -87,6 +88,8 @@ export const PUT = withAuth(async (request, { params }) => {
       });
     });
 
+    await logActivity(user.username, 'Ubah Pelanggan', `Mengubah data pelanggan "${existing.nama}" (Batas Bonus: Rp${Number(existing.bonus_threshold).toLocaleString('id-ID')} -> Rp${Number(updated.bonus_threshold).toLocaleString('id-ID')})`);
+
     return successResponse(formatCustomer(updated));
   } catch (error) {
     console.error('[PUT /customers/:id]', error);
@@ -94,7 +97,7 @@ export const PUT = withAuth(async (request, { params }) => {
   }
 });
 
-export const DELETE = withAuth(async (request, { params }) => {
+export const DELETE = withAuth(async (request, { params }, user) => {
   try {
     const { id } = await params;
     const existing = await prisma.customer.findUnique({ where: { id } });
@@ -103,6 +106,9 @@ export const DELETE = withAuth(async (request, { params }) => {
     }
     // Soft-delete — data historis tetap ada (AC-2.3)
     await prisma.customer.update({ where: { id }, data: { is_deleted: true } });
+
+    await logActivity(user.username, 'Hapus Pelanggan', `Menghapus pelanggan "${existing.nama}"`);
+
     return Response.json({ success: true });
   } catch (error) {
     console.error('[DELETE /customers/:id]', error);

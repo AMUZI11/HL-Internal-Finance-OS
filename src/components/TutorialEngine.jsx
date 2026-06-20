@@ -412,6 +412,63 @@ const TUT11_STEPS = [
   }
 ];
 
+const TUT12_STEPS = [
+  {
+    targetId: "cust-detail-btn-cust-seed-1",
+    title: "Langkah 1/9: Buka Detail Transaksi",
+    content: "Cari pelanggan Toko Kelontong Bu Retno, lalu klik tombol [Transaksi] untuk melihat riwayat piutangnya.",
+    trigger: "click"
+  },
+  {
+    targetId: "cust-detail-edit-btn-tx-seed-2",
+    title: "Langkah 2/9: Ubah Nota Bon",
+    content: "Cari bon nomor BON-2026-002 berstatus Piutang (30 unit), lalu klik [Ubah] untuk membagi transaksi.",
+    trigger: "click"
+  },
+  {
+    targetId: "tx-qty-input-0",
+    title: "Langkah 3/9: Kurangi Jumlah Barang",
+    content: "Pelanggan membayar cicilan untuk 15 unit terlebih dahulu. Ubah jumlah quantity dari 30 menjadi 15.",
+    trigger: "input"
+  },
+  {
+    targetId: "tx-status-select",
+    title: "Langkah 4/9: Atur Status Lunas",
+    content: "Ubah status pembayaran menjadi Lunas untuk mencatat bahwa pembayaran 15 unit pertama ini sudah diterima.",
+    trigger: "change"
+  },
+  {
+    targetId: "tx-save-btn",
+    title: "Langkah 5/9: Simpan Cicilan Pertama",
+    content: "Klik tombol [SIMPAN BON] untuk memperbarui data cicilan pertama yang lunas.",
+    trigger: "click"
+  },
+  {
+    targetId: "tour-nav-customers",
+    title: "Langkah 6/9: Kembali ke Pelanggan",
+    content: "Setelah cicilan pertama lunas disimpan, klik menu [Pelanggan] untuk memproses sisa cicilan.",
+    trigger: "click"
+  },
+  {
+    targetId: "cust-detail-btn-cust-seed-1",
+    title: "Langkah 7/9: Buka Kembali Transaksi",
+    content: "Klik kembali tombol [Transaksi] pada Toko Kelontong Bu Retno.",
+    trigger: "click"
+  },
+  {
+    targetId: "cust-detail-settle-btn-tx-seed-4",
+    title: "Langkah 8/9: Setor Lunas Sisa Cicilan",
+    content: "Kini pelanggan ingin melunasi sisa cicilan (BON-2026-002-SIS). Klik tombol [Setor Lunas] pada bon sisa tersebut.",
+    trigger: "click"
+  },
+  {
+    targetId: "settle-confirm-btn",
+    title: "Langkah 9/9: Konfirmasi Pelunasan Sisa",
+    content: "Klik tombol [Konfirmasi Lunas] untuk menyelesaikan seluruh rangkaian pembayaran cicilan pelanggan ini.",
+    trigger: "click"
+  }
+];
+
 export const TutorialProvider = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -542,6 +599,9 @@ export const TutorialProvider = ({ children }) => {
       case "TUT-11":
         steps = TUT11_STEPS;
         break;
+      case "TUT-12":
+        steps = TUT12_STEPS;
+        break;
       default:
         steps = [];
     }
@@ -648,9 +708,30 @@ export const TutorialProvider = ({ children }) => {
         },
       ];
 
+      const demoTransactions = [...DEMO_TRANSACTIONS];
+      if (tutorialId === "TUT-12") {
+        demoTransactions.push({
+          id: 'tx-seed-4',
+          nomor_bon: 'BON-2026-002-SIS',
+          tanggal: '2026-06-10',
+          customer_id: 'cust-seed-1',
+          ongkir: 0,
+          deskripsi: 'Sisa cicilan bon BON-2026-002',
+          is_bonus: false,
+          status: 'Piutang',
+          tanggal_lunas: null,
+          omzet_total: 172800,
+          laba_total: 37800,
+          amount_owed: 172800,
+          items: [
+            { id: 'item-s4-1', transaction_id: 'tx-seed-4', product_id: 'prod-seed-2', quantity: 15, product_type_snapshot: 'LM', harga_base_snapshot: 16000, harga_modal_snapshot: 9000, discounted_unit_price: 11520, line_omzet: 172800, line_laba: 37800, is_bonus_item: false, product: { id: 'prod-seed-2', nama: 'LM Apel Manis 500ml', tipe: 'LM', harga_base: 16000 } },
+          ],
+          customer: { id: 'cust-seed-1', nama: 'Toko Kelontong Bu Retno' },
+        });
+      }
       localStorage.setItem("hl_demo_products", JSON.stringify(DEMO_PRODUCTS));
       localStorage.setItem("hl_demo_customers", JSON.stringify(DEMO_CUSTOMERS));
-      localStorage.setItem("hl_demo_transactions", JSON.stringify(DEMO_TRANSACTIONS));
+      localStorage.setItem("hl_demo_transactions", JSON.stringify(demoTransactions));
       // ─────────────────────────────────────────────────────────────────────
 
       setActiveTutorial({

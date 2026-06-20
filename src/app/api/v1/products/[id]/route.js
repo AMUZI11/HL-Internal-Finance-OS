@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { withAuth, errorResponse, successResponse } from '@/lib/auth';
 import { formatProduct } from '@/lib/calculations';
 import { productSchema } from '@/lib/validation';
+import { logActivity } from '@/lib/audit';
 
 export const GET = withAuth(async (request, { params }) => {
   try {
@@ -18,7 +19,7 @@ export const GET = withAuth(async (request, { params }) => {
   }
 });
 
-export const PUT = withAuth(async (request, { params }) => {
+export const PUT = withAuth(async (request, { params }, user) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -40,6 +41,9 @@ export const PUT = withAuth(async (request, { params }) => {
     if (harga_base !== undefined) updateData.harga_base = harga_base;
 
     const updated = await prisma.product.update({ where: { id }, data: updateData });
+
+    await logActivity(user.username, 'Ubah Produk', `Mengubah produk "${existing.nama}" (Harga Dasar: Rp${Number(existing.harga_base).toLocaleString('id-ID')} -> Rp${Number(updated.harga_base).toLocaleString('id-ID')})`);
+
     return successResponse(formatProduct(updated));
   } catch (error) {
     console.error('[PUT /products/:id]', error);
@@ -47,7 +51,7 @@ export const PUT = withAuth(async (request, { params }) => {
   }
 });
 
-export const DELETE = withAuth(async (request, { params }) => {
+export const DELETE = withAuth(async (request, { params }, user) => {
   try {
     const { id } = await params;
     const existing = await prisma.product.findUnique({ where: { id } });
@@ -55,6 +59,9 @@ export const DELETE = withAuth(async (request, { params }) => {
       return errorResponse('Produk tidak ditemukan.', 'NOT_FOUND', 404);
     }
     await prisma.product.update({ where: { id }, data: { is_deleted: true } });
+
+    await logActivity(user.username, 'Hapus Produk', `Menghapus produk "${existing.nama}" (${existing.tipe})`);
+
     return Response.json({ success: true });
   } catch (error) {
     console.error('[DELETE /products/:id]', error);

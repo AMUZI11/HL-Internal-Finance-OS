@@ -475,6 +475,26 @@ export const api = {
     }
     throw new Error(res?.data?.message || 'Gagal mengubah username');
   },
+
+  getAuditLogs: async () => {
+    const res = await fetchAPI('/logs');
+    return res?.data?.data || [];
+  },
+
+  backupData: async () => {
+    const res = await fetchAPI('/admin/backup');
+    if (res?.ok) return res.data.data;
+    throw new Error(res?.data?.message || 'Gagal mengekspor data cadangan.');
+  },
+
+  restoreData: async (payload) => {
+    const res = await fetchAPI('/admin/restore', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    if (res?.ok) return { success: true };
+    throw new Error(res?.data?.message || 'Gagal memulihkan data cadangan.');
+  },
 };
 
 // Re-export MockDB alias untuk backwards compatibility (migrasi bertahap)

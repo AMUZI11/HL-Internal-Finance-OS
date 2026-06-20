@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ChevronRight, Calendar, CreditCard, Gift, Printer, CheckCircle2, ChevronLeft, X } from 'lucide-react';
+import { ChevronRight, Calendar, CreditCard, Gift, Printer, CheckCircle2, ChevronLeft, X, Download } from 'lucide-react';
 import { api } from '../utils/api';
 import ConfirmModal from '../components/ConfirmModal';
 import { useTutorial } from '../components/TutorialEngine';
+import { exportToCSV } from '../utils/export';
 
 export default function CustomerDetail({ customerId, setView, setEditTransactionId }) {
   const { registerTrigger } = useTutorial();
@@ -133,6 +134,7 @@ export default function CustomerDetail({ customerId, setView, setEditTransaction
         const [year, month] = selectedMonth.split("-");
         await api.settleMonth(customerId, year, month, tanggalLunas);
       }
+      registerTrigger("settle-confirm-btn", "click");
       setIsSettleModalOpen(false);
       await loadData();
     } catch (err) {
@@ -266,6 +268,20 @@ export default function CustomerDetail({ customerId, setView, setEditTransaction
 
   const filteredMonthTx = transactions.filter(t => t.tanggal.startsWith(selectedMonth));
 
+  const handleExportCSV = () => {
+    if (!customer) return;
+    const headers = ['Nomor Bon', 'Tanggal', 'Ongkir (Rp)', 'Total Tagihan (Rp)', 'Status', 'Tanggal Lunas'];
+    const rows = filteredMonthTx.map(t => [
+      t.nomor_bon,
+      t.tanggal,
+      Number(t.ongkir || 0),
+      Number(t.amount_owed || 0),
+      t.status,
+      t.tanggal_lunas || '-'
+    ]);
+    exportToCSV(`Transaksi_${customer.nama.replace(/\s+/g, '_')}_${selectedMonth}.csv`, headers, rows);
+  };
+
   return (
     <div className="space-y-6">
       {/* Title Header */}
@@ -370,7 +386,7 @@ export default function CustomerDetail({ customerId, setView, setEditTransaction
         <button 
           id="cust-detail-print-transactions-btn"
           onClick={() => handlePrint(`Laporan Transaksi - ${customer.nama}`, "all")}
-          className="flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 text-xs font-bold text-charcoal-medium transition-all"
+          className="flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 text-xs font-bold text-charcoal-medium transition-all cursor-pointer"
         >
           <Printer size={16} /> Cetak Rekap Transaksi (PDF)
         </button>
@@ -381,9 +397,16 @@ export default function CustomerDetail({ customerId, setView, setEditTransaction
             handlePrint(`Surat Tagihan Piutang - ${customer.nama}`, "piutang");
             registerTrigger("cust-detail-print-piutang-btn", "click");
           }}
-          className="flex items-center gap-1.5 px-4 py-2.5 border border-rose-light bg-rose-light/10 rounded-xl hover:bg-rose-light/20 text-xs font-bold text-rose-deep transition-all"
+          className="flex items-center gap-1.5 px-4 py-2.5 border border-rose-light bg-rose-light/10 rounded-xl hover:bg-rose-light/20 text-xs font-bold text-rose-deep transition-all cursor-pointer"
         >
           <Printer size={16} /> Cetak Surat Piutang (PDF)
+        </button>
+
+        <button 
+          onClick={handleExportCSV}
+          className="flex items-center gap-1.5 px-4 py-2.5 border border-amber-soft bg-amber-cream/40 rounded-xl hover:bg-amber-soft/20 text-xs font-bold text-amber-deep transition-all cursor-pointer"
+        >
+          <Download size={16} /> Unduh CSV Riwayat
         </button>
       </div>
 

@@ -15,7 +15,8 @@ const TUTORIAL_TOPICS = [
   { id: "TUT-08", title: "Cara Melihat Laporan & Export PDF", category: "MENENGAH", duration: "~3 menit" },
   { id: "TUT-09", title: "Cara Membuat Bon Bonus", category: "LANJUTAN", duration: "~4 menit" },
   { id: "TUT-10", title: "Memahami Omzet, Laba, dan Piutang", category: "LANJUTAN", duration: "~5 menit" },
-  { id: "TUT-11", title: "Cara Mengedit dan Menghapus Data", category: "LANJUTAN", duration: "~3 menit" }
+  { id: "TUT-11", title: "Cara Mengedit dan Menghapus Data", category: "LANJUTAN", duration: "~3 menit" },
+  { id: "TUT-12", title: "Cara Pembayaran Cicilan / Pelunasan Sebagian", category: "LANJUTAN", duration: "~4 menit", interactive: true }
 ];
 
 const FAQS = [
@@ -89,7 +90,7 @@ export default function HelpCenter({ setView }) {
 
   const handleStartTutorial = (id) => {
     let targetView = "dashboard";
-    if (id === "TUT-01" || id === "TUT-04" || id === "TUT-05" || id === "TUT-06" || id === "TUT-07" || id === "TUT-11") {
+    if (id === "TUT-01" || id === "TUT-04" || id === "TUT-05" || id === "TUT-06" || id === "TUT-07" || id === "TUT-11" || id === "TUT-12") {
       targetView = "customers";
     } else if (id === "TUT-02") {
       targetView = "products";

@@ -2,8 +2,9 @@
 import { prisma } from '@/lib/prisma';
 import { withAuth, errorResponse, successResponse } from '@/lib/auth';
 import { formatTransaction, checkAndGrantBonuses } from '@/lib/calculations';
+import { logActivity } from '@/lib/audit';
 
-export const POST = withAuth(async (request, { params }) => {
+export const POST = withAuth(async (request, { params }, user) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -28,6 +29,8 @@ export const POST = withAuth(async (request, { params }) => {
     if (updated.customer_id) {
       await checkAndGrantBonuses(updated.customer_id, updated.id, prisma);
     }
+
+    await logActivity(user.username, 'Pelunasan Bon', `Melunasi bon "${updated.nomor_bon}" (Total: Rp${Number(updated.amount_owed).toLocaleString('id-ID')})`);
 
     return successResponse(formatTransaction(updated));
   } catch (error) {

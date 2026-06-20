@@ -2,6 +2,7 @@
 import { prisma } from '@/lib/prisma';
 import { comparePassword, signToken, errorResponse } from '@/lib/auth';
 import { loginSchema } from '@/lib/validation';
+import { logActivity } from '@/lib/audit';
 
 const loginAttempts = new Map();
 const WINDOW_MS = 15 * 60 * 1000;
@@ -66,6 +67,8 @@ export async function POST(request) {
     });
 
     const token = signToken({ id: user.id, username: user.username });
+
+    await logActivity(user.username, 'Login', 'Berhasil masuk ke sistem');
 
     return Response.json({
       token,

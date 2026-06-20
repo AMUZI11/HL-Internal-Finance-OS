@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from 'react';
-import { KeyRound, ShieldAlert, CheckCircle2, AlertTriangle, Eye, EyeOff, Loader2, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { KeyRound, ShieldAlert, CheckCircle2, AlertTriangle, Eye, EyeOff, Loader2, User, Database, Upload, Download, History } from 'lucide-react';
 import { api } from '../utils/api';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -28,6 +28,105 @@ export default function Settings() {
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState("");
+
+  // Backup & Restore States
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreError, setRestoreError] = useState("");
+  const [restoreSuccess, setRestoreSuccess] = useState("");
+  const [isRestoreConfirmOpen, setIsRestoreConfirmOpen] = useState(false);
+  const [pendingRestorePayload, setPendingRestorePayload] = useState(null);
+
+  // Audit Logs States
+  const [logs, setLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+
+  const loadAuditLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const data = await api.getAuditLogs();
+      setLogs(data);
+    } catch (err) {
+      console.error("Gagal memuat log audit:", err);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  // Load logs on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadAuditLogs();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const data = await api.backupData();
+      
+      // Excel-friendly UTF-8 JSON file download
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', jsonString);
+      const dateStr = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute('download', `hl_backup_${dateStr}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      
+      // Refresh logs
+      setTimeout(() => { loadAuditLogs(); }, 500);
+    } catch (err) {
+      alert(err.message || "Gagal mencadangkan data.");
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    setRestoreError("");
+    setRestoreSuccess("");
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target.result);
+        if (!json.version || !json.data) {
+          setRestoreError("Berkas cadangan tidak valid (format salah).");
+          return;
+        }
+        setPendingRestorePayload(json);
+        setIsRestoreConfirmOpen(true);
+      } catch (err) {
+        setRestoreError("Gagal membaca berkas JSON. Pastikan format berkas benar.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // Reset input
+  };
+
+  const handleRestoreConfirm = async () => {
+    setIsRestoreConfirmOpen(false);
+    if (!pendingRestorePayload) return;
+    setRestoreLoading(true);
+    setRestoreError("");
+    setRestoreSuccess("");
+
+    try {
+      await api.restoreData(pendingRestorePayload);
+      setRestoreSuccess("Seluruh data sistem berhasil dipulihkan dari berkas cadangan.");
+      setPendingRestorePayload(null);
+      setTimeout(() => { loadAuditLogs(); }, 500);
+    } catch (err) {
+      setRestoreError(err.message || "Gagal memulihkan data.");
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
@@ -298,7 +397,115 @@ export default function Settings() {
           </form>
         </div>
 
-        {/* Section 3: Reset Data Card */}
+        {/* Section 3: Cadangkan & Pulihkan Data (Backup & Restore) */}
+        <div className="bg-[#FAF7F0] border-4 border-[#E8DCC8] rounded-3xl p-6 md:p-8 max-w-xl shadow-sm space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#3D1A0F] text-white border border-[#4E271B] rounded-xl flex items-center justify-center">
+              <Database size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-extrabold text-[#3D1A0F] font-heading">Cadangkan &amp; Pulihkan Data</h2>
+              <p className="text-xs text-[#6B4F3A] font-semibold">Simpan salinan database Anda secara lokal atau pulihkan dari file cadangan JSON.</p>
+            </div>
+          </div>
+
+          {restoreError && (
+            <div className="bg-rose-50 border border-rose-100 text-rose-800 p-4 rounded-xl text-xs font-bold flex items-start gap-2 mb-4 animate-shake">
+              <ShieldAlert className="flex-shrink-0" size={16} />
+              <span>{restoreError}</span>
+            </div>
+          )}
+
+          {restoreSuccess && (
+            <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 p-4 rounded-xl text-xs font-bold flex items-start gap-2 mb-4">
+              <CheckCircle2 className="flex-shrink-0" size={16} />
+              <span>{restoreSuccess}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Backup Button */}
+            <button
+              onClick={handleBackup}
+              disabled={backupLoading}
+              className="bg-[#C97B1A] hover:bg-[#A85F10] disabled:bg-gray-300 text-white font-extrabold p-5 rounded-2xl text-xs shadow-md transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-2 cursor-pointer text-center"
+            >
+              <Download size={22} />
+              <span>CADANGKAN DATA (Download JSON)</span>
+            </button>
+
+            {/* Restore File Input */}
+            <label className="border-2 border-dashed border-[#E8DCC8] hover:border-[#C97B1A] bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer text-center transition-all hover:bg-[#FAF7F0]/40">
+              <Upload size={22} className="text-[#C97B1A]" />
+              <span className="text-xs font-extrabold text-[#3D1A0F]">PULIHKAN DATA (Upload JSON)</span>
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleFileChange}
+                className="hidden"
+                disabled={restoreLoading}
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Section 4: Log Aktivitas Operator (Audit Log) */}
+        <div className="bg-[#FAF7F0] border-4 border-[#E8DCC8] rounded-3xl p-6 md:p-8 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E8DCC8] pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#3D1A0F] text-white border border-[#4E271B] rounded-xl flex items-center justify-center">
+                <History size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-extrabold text-[#3D1A0F] font-heading">Log Aktivitas Operator</h2>
+                <p className="text-xs text-[#6B4F3A] font-semibold">Daftar aksi dan perubahan yang dicatat oleh sistem kas secara real-time.</p>
+              </div>
+            </div>
+            <button 
+              onClick={loadAuditLogs}
+              className="text-xs font-bold text-[#C97B1A] hover:underline flex items-center gap-1 bg-white border border-[#E8DCC8] px-3 py-1.5 rounded-lg cursor-pointer"
+            >
+              Ulang Muat
+            </button>
+          </div>
+
+          <div className="overflow-x-auto max-h-[300px] overflow-y-auto pr-1">
+            {logsLoading ? (
+              <div className="text-center py-8 text-xs text-[#6B4F3A] font-bold">Memuat riwayat log...</div>
+            ) : logs.length === 0 ? (
+              <div className="text-center py-8 text-xs text-gray-400 italic">Belum ada riwayat aktivitas tercatat.</div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#E8DCC8] text-[10px] text-[#6B4F3A] uppercase font-black">
+                    <th className="pb-2">Waktu</th>
+                    <th className="pb-2">Operator</th>
+                    <th className="pb-2">Aksi</th>
+                    <th className="pb-2">Rincian Deskripsi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E8DCC8]/30 text-xs font-semibold text-[#1C1009]">
+                  {logs.map((log) => (
+                    <tr key={log.id} className="hover:bg-white/30 transition-colors">
+                      <td className="py-2.5 font-mono text-gray-500 whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-2.5 font-bold text-[#3D1A0F]">{log.operator}</td>
+                      <td className="py-2.5">
+                        <span className="bg-[#E8DCC8] text-[#3D1A0F] text-[10px] px-2 py-0.5 rounded font-black">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="py-2.5 text-gray-600 font-medium">{log.details}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Section 5: Reset Data Card */}
         <div className="bg-rose-50/50 border-4 border-rose-100 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2 text-rose-700">
@@ -331,6 +538,20 @@ export default function Settings() {
         </div>
 
       </div>
+
+      {/* Confirm Modal for System Restore */}
+      <ConfirmModal
+        isOpen={isRestoreConfirmOpen}
+        title="Pulihkan Seluruh Data"
+        message={`Apakah Bapak/Ibu yakin ingin memulihkan seluruh data sistem dari berkas cadangan yang dibuat oleh ${pendingRestorePayload?.backup_by || 'Operator'}? Semua data transaksi, pelanggan, dan barang saat ini akan dihapus permanen dan diganti dengan isi cadangan.`}
+        onConfirm={handleRestoreConfirm}
+        onCancel={() => {
+          setIsRestoreConfirmOpen(false);
+          setPendingRestorePayload(null);
+        }}
+        confirmLabel="YA, PULIHKAN"
+        cancelLabel="BATAL"
+      />
 
       {/* Confirm Modal for System Reset */}
       <ConfirmModal
