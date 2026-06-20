@@ -203,3 +203,36 @@
     page-break-inside: avoid;
   }
 }
+
+/* Custom Splash Screen Animations */
+@keyframes tracking-expand {
+  0% {
+    letter-spacing: -0.2em;
+    opacity: 0;
+    filter: blur(10px);
+  }
+  40% {
+    opacity: 0.6;
+  }
+  100% {
+    letter-spacing: 0.25em;
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+.animate-tracking-expand {
+  animation: tracking-expand 1.8s cubic-bezier(0.21, 1.02, 0.43, 1.01) forwards;
+}
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite ease-in-out;
+}
+
